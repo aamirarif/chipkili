@@ -1,7 +1,7 @@
 import "server-only";
 import { store } from "lib/store";
 import { newId, sha256, safeEqual, sixDigitCode } from "lib/crypto";
-import { callWithCode, sendSms } from "lib/notify";
+import { callWithCode, sendEmail, sendSms } from "lib/notify";
 
 export const OTP_TTL_MS = 5 * 60 * 1000;
 export const MAX_PER_PHONE_10MIN = 3;
@@ -16,11 +16,23 @@ function hashCode(phone: string, code: string): string {
   return sha256(`${phone}:${code}`);
 }
 
-export async function sendOtp(phone: string, deviceId: string, channel: "sms" | "voice"): Promise<SendOtpResult> {
+export type OtpPurpose = "verify" | "admin";
+
+/**
+ * Sends a 6-digit code. "verify" = a buyer confirming their phone; "admin" = the owner signing in
+ * to Admin (also emailed as a backup). Codes of one purpose can never be used for the other.
+ */
+export async function sendOtp(
+  phone: string,
+  deviceId: string,
+  channel: "sms" | "voice",
+  purpose: OtpPurpose = "verify",
+  email?: string,
+): Promise<SendOtpResult> {
   const db = store();
   const now = Date.now();
   const all = await db.list("otp");
-  const recentPhone = all.filter((o) => o.phone === phone && now - Date.parse(o.createdAt) < 10 * 60 * 1000);
+  const recentPhone = all.filter((o) => o.phone === phone && o.purpose === purpose && now - Date.parse(o.createdAt) < 10 * 60 * 1000);
   if (recentPhone.length >= MAX_PER_PHONE_10MIN) return { ok: false, reason: "rate_phone" };
   const dayDevice = all.filter((o) => o.deviceId === deviceId && now - Date.parse(o.createdAt) < 864e5);
   if (dayDevice.length >= MAX_PER_DEVICE_DAY) return { ok: false, reason: "rate_device" };
@@ -33,7 +45,7 @@ export async function sendOtp(phone: string, deviceId: string, channel: "sms" | 
     id: newId(),
     phone,
     codeHash: hashCode(phone, code),
-    purpose: "verify",
+    purpose,
     expiresAt: new Date(now + OTP_TTL_MS).toISOString(),
     attempts: 0,
     used: false,
@@ -41,10 +53,17 @@ export async function sendOtp(phone: string, deviceId: string, channel: "sms" | 
     deviceId,
   });
 
-  const sent =
-    channel === "voice"
-      ? await callWithCode(phone, code)
-      : await sendSms(phone, `Your ChipKili code is ${code}. It expires in 5 minutes. ChipKili will never ask you for this code.`);
+  const text =
+    purpose === "admin"
+      ? `ChipKili Admin sign-in code: ${code}. It expires in 5 minutes. If you did not try to sign in, ignore this.`
+      : `Your ChipKili code is ${code}. It expires in 5 minutes. ChipKili will never ask you for this code.`;
+  const sent = channel === "voice" ? await callWithCode(phone, code) : await sendSms(phone, text);
+  if (purpose === "admin" && email) {
+    const mailed = await sendEmail(email, "ChipKili Admin sign-in code", `${text}
+
+This copy is the backup in case the text is slow.`);
+    if (!sent.ok && mailed.ok) return { ok: true, channel };
+  }
   if (!sent.ok) return { ok: false, reason: "send_failed", detail: sent.error };
   const devCode = process.env.NODE_ENV !== "production" && process.env.DEV_SHOW_CODE === "1" ? code : undefined;
   return { ok: true, channel, devCode };
@@ -52,10 +71,10 @@ export async function sendOtp(phone: string, deviceId: string, channel: "sms" | 
 
 export type VerifyResult = { ok: true } | { ok: false; reason: "no_code" | "expired" | "too_many" | "wrong" };
 
-export async function verifyOtp(phone: string, code: string): Promise<VerifyResult> {
+export async function verifyOtp(phone: string, code: string, purpose: OtpPurpose = "verify"): Promise<VerifyResult> {
   const db = store();
   const open = (await db.list("otp"))
-    .filter((o) => o.phone === phone && !o.used)
+    .filter((o) => o.phone === phone && o.purpose === purpose && !o.used)
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
   if (!open) return { ok: false, reason: "no_code" };
   if (Date.parse(open.expiresAt) < Date.now()) {

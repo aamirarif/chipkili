@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { store } from "lib/store";
-import { adminConfigured, checkAdminLogin, requireAdmin } from "lib/admin-auth";
-import { clearAdmin, setAdmin } from "lib/session";
+import { adminConfigured, checkAdminPassword, checkAuthenticatorCode, requireAdmin } from "lib/admin-auth";
+import { sendOtp, verifyOtp } from "lib/otp";
+import { maskPhone } from "lib/phone";
+import { adminPending, clearAdmin, clearAdminPending, setAdmin, setAdminPending } from "lib/session";
 import { isBlocked, limited } from "lib/http";
 import { logActivity } from "lib/leads";
 import { publishMedia, saveUpload } from "lib/media";
@@ -19,15 +21,41 @@ export type ActionResult = { ok: boolean; error?: string; id?: string; media?: M
 
 /* ---------- sign in ---------- */
 
-export async function login(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
-  if (!adminConfigured()) return { ok: false, error: "Admin is not set up yet. Run: npm run admin:setup" };
+export type LoginState = { ok: boolean; error?: string; step?: "password" | "code"; sentTo?: string };
+
+/** Step 1: user + password. On success a 6-digit code is texted (and emailed) to the owner. */
+export async function login(_prev: LoginState | null, form: FormData): Promise<LoginState> {
+  if (!adminConfigured()) return { ok: false, step: "password", error: "Admin is not set up yet. Run: npm run admin:setup" };
   const user = String(form.get("user") ?? "");
   const key = `admin-login:${user.toLowerCase()}`;
-  if (isBlocked(key, 8)) return { ok: false, error: "Too many wrong tries. Wait 15 minutes." };
-  if (!checkAdminLogin(user, String(form.get("password") ?? ""), String(form.get("code") ?? ""))) {
+  if (isBlocked(key, 8)) return { ok: false, step: "password", error: "Too many wrong tries. Wait 15 minutes." };
+  if (!checkAdminPassword(user, String(form.get("password") ?? ""))) {
     limited(key, 8, 15 * 60_000); // counts failures only
-    return { ok: false, error: "Sign-in details are not right." };
+    return { ok: false, step: "password", error: "User or password is not right." };
   }
+  const settings = await getSettings();
+  const sent = await sendOtp(settings.alertPhone, `admin:${user}`, "sms", "admin", settings.alertEmail);
+  if (!sent.ok) {
+    return { ok: false, step: "password", error: sent.reason === "rate_phone" ? "Too many codes. Wait 10 minutes." : "Could not send the code. Try again." };
+  }
+  await setAdminPending(user);
+  return { ok: true, step: "code", sentTo: maskPhone(settings.alertPhone) };
+}
+
+/** Step 2: the texted code (or an authenticator-app code if one is set up). */
+export async function loginCode(_prev: LoginState | null, form: FormData): Promise<LoginState> {
+  const user = await adminPending();
+  if (!user) return { ok: false, step: "password", error: "That took too long. Start again with your password." };
+  const code = String(form.get("code") ?? "").replace(/\D/g, "");
+  const key = `admin-code:${user.toLowerCase()}`;
+  if (isBlocked(key, 8)) return { ok: false, step: "code", error: "Too many wrong codes. Wait 15 minutes." };
+  const settings = await getSettings();
+  const ok = code.length === 6 && ((await verifyOtp(settings.alertPhone, code, "admin")).ok || checkAuthenticatorCode(code));
+  if (!ok) {
+    limited(key, 8, 15 * 60_000);
+    return { ok: false, step: "code", error: "That code is not right. Check the text and try again." };
+  }
+  await clearAdminPending();
   await setAdmin(user);
   await logActivity(user, "signed in");
   redirect("/admin");

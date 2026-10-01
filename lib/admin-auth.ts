@@ -7,22 +7,27 @@ import { adminUser } from "lib/session";
 authenticator.options = { window: 1 };
 
 /**
- * Admin sign-in: password + a 6-digit code from an authenticator app (not SMS, so Admin
- * never depends on texting). Set up with: npm run admin:setup
+ * Admin sign-in has two steps:
+ * 1. user + password (scrypt hash in ADMIN_PASSWORD_HASH)
+ * 2. a 6-digit code texted to the owner's alert phone (and emailed as a backup).
+ *    If ADMIN_TOTP_SECRET is set, a code from an authenticator app is accepted too.
  */
-export function checkAdminLogin(user: string, password: string, totp: string): boolean {
+export function checkAdminPassword(user: string, password: string): boolean {
   const expectedUser = process.env.ADMIN_USER || "owner";
   const hash = process.env.ADMIN_PASSWORD_HASH;
-  const secret = process.env.ADMIN_TOTP_SECRET;
-  if (!hash || !secret) return false;
+  if (!hash) return false;
   const userOk = user.trim().toLowerCase() === expectedUser.toLowerCase();
   const pwOk = checkPassword(password, hash);
-  const codeOk = authenticator.check(totp.replace(/\s/g, ""), secret);
-  return userOk && pwOk && codeOk;
+  return userOk && pwOk;
+}
+
+export function checkAuthenticatorCode(code: string): boolean {
+  const secret = process.env.ADMIN_TOTP_SECRET;
+  return Boolean(secret && authenticator.check(code.replace(/\s/g, ""), secret));
 }
 
 export function adminConfigured(): boolean {
-  return Boolean(process.env.ADMIN_PASSWORD_HASH && process.env.ADMIN_TOTP_SECRET);
+  return Boolean(process.env.ADMIN_PASSWORD_HASH);
 }
 
 /** Use at the top of every admin page and server action. */

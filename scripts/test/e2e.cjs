@@ -119,12 +119,21 @@ const outbox = () => {
   check("admin is closed on the public address", pub.status() === 404);
   await admin.goto(`${ADMIN}/`, { waitUntil: "networkidle" });
   check("admin address asks for sign-in", admin.url().endsWith("/admin/login"));
+  // step 1: wrong password is refused
+  await admin.getByLabel("Password").fill("not-the-password");
+  await admin.getByRole("button", { name: "Continue" }).click();
+  check("wrong admin password refused", await admin.getByText("User or password is not right.").waitFor({ timeout: 10000 }).then(() => true, () => false));
+  // step 1: right password -> a code is texted to the owner's phone
   await admin.getByLabel("Password").fill(fs.readFileSync(process.env.ADMIN_PW_FILE, "utf8").trim());
-  await admin.getByLabel("Code from your authenticator app").fill("123456");
+  await admin.getByRole("button", { name: "Continue" }).click();
+  await admin.getByLabel("Code").waitFor();
+  const adminCode = () =>
+    outbox().filter((m) => m.channel === "sms" && m.to === "+12013444230" && /Admin sign-in code: \d{6}/.test(m.text)).pop().text.match(/\d{6}/)[0];
+  check("admin code also emailed as backup", outbox().some((m) => m.channel === "email" && /Admin sign-in code/.test(m.subject)));
+  await admin.getByLabel("Code").fill(adminCode() === "000000" ? "111111" : "000000");
   await admin.getByRole("button", { name: "Sign in" }).click();
-  check("wrong authenticator code refused", await admin.getByText("Sign-in details are not right.").waitFor({ timeout: 10000 }).then(() => true, () => false));
-  await admin.getByLabel("Password").fill(fs.readFileSync(process.env.ADMIN_PW_FILE, "utf8").trim());
-  await admin.getByLabel("Code from your authenticator app").fill(authenticator.generate(env("ADMIN_TOTP_SECRET")));
+  check("wrong admin code refused", await admin.getByText("That code is not right").waitFor({ timeout: 10000 }).then(() => true, () => false));
+  await admin.getByLabel("Code").fill(adminCode());
   await admin.getByRole("button", { name: "Sign in" }).click();
   await admin.waitForURL(`${ADMIN}/admin`);
   const sellLead = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, "data", "db.json"), "utf8")).leads)

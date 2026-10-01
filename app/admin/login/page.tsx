@@ -24,8 +24,7 @@ export default async function AdminLogin() {
           <LoginForm />
         ) : (
           <p className="mt-6 text-sm text-ink-2">
-            Admin is not set up yet. On the server, run <b>npm run admin:setup -- owner &quot;your password&quot; --write .env.local</b>, scan the QR code with an
-            authenticator app, and restart.
+            Admin is not set up yet. On the server, run <b>npm run admin:setup -- owner &quot;your password&quot; --write .env.local</b> and restart.
           </p>
         )}
       </div>
