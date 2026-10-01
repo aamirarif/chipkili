@@ -1,16 +1,17 @@
 import type { NextConfig } from "next";
 
 // Content Security Policy. Next.js injects small inline scripts to start the page, so scripts
-// allow 'self' + inline; everything else is locked to this site. Maps come from OpenStreetMap.
+// allow 'self' + inline, plus Cloudflare's own cookieless visitor analytics; everything else is locked
+// to this site. Maps come from OpenStreetMap.
 // No other site may put ChipKili (or Admin) inside a frame.
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "media-src 'self' blob:",
   "font-src 'self'",
-  "connect-src 'self'",
+  "connect-src 'self' https://cloudflareinsights.com",
   "frame-src https://www.openstreetmap.org",
   "frame-ancestors 'none'",
   "base-uri 'self'",
