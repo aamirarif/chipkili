@@ -1,0 +1,23 @@
+http:
+  routers:
+    chipkili-main:
+      rule: "Host(`chipkili.com`) || Host(`www.chipkili.com`) || Host(`admin.chipkili.com`)"
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: le
+      service: chipkili-main
+      priority: 200
+    chipkili-http:
+      rule: "Host(`chipkili.com`) || Host(`www.chipkili.com`) || Host(`admin.chipkili.com`)"
+      entryPoints:
+        - web
+      middlewares:
+        - redirect-https
+      service: chipkili-main
+      priority: 200
+  services:
+    chipkili-main:
+      loadBalancer:
+        servers:
+          - url: "http://chipkili:3000"

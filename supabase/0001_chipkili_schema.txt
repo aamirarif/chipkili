@@ -1,0 +1,35 @@
+-- ChipKili database setup, for the aigade-platform Supabase project (Pro plan).
+-- Paste this whole file into Supabase > SQL Editor > New query, then Run. Safe to run twice.
+-- Creates its own schema "chipkili": nothing in the existing AiGade tables is touched.
+-- Each table stores one JSON document per row; the site talks to it only from the server
+-- with the service role key, so the tables are closed to the public (row level security on,
+-- no policies = no access for anon or logged-in browser users).
+
+create schema if not exists chipkili;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['items','categories','leads','events','shares','activity','otp','settings','counters'] loop
+    execute format('create table if not exists chipkili.%I (
+      id text primary key,
+      doc jsonb not null,
+      updated_at timestamptz not null default now()
+    )', t);
+    execute format('alter table chipkili.%I enable row level security', t);
+    execute format('create index if not exists %I on chipkili.%I (updated_at)', t || '_updated_idx', t);
+  end loop;
+end $$;
+
+-- lookups the site does often
+create index if not exists events_kind_idx on chipkili.events ((doc->>'kind'));
+create index if not exists events_item_idx on chipkili.events ((doc->>'itemId'));
+create index if not exists otp_phone_idx on chipkili.otp ((doc->>'phone'));
+create index if not exists leads_phone_idx on chipkili.leads ((doc->>'phone'));
+
+-- the server (service role) needs to reach the new schema through the API
+grant usage on schema chipkili to service_role;
+grant all on all tables in schema chipkili to service_role;
+alter default privileges in schema chipkili grant all on tables to service_role;
+
+-- LAST STEP, by hand: Supabase > Project Settings > API > Exposed schemas: add "chipkili", Save.

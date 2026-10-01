@@ -1,0 +1,7 @@
+node_modules
+.next
+data
+.env*
+!.env.example
+admin-totp-qr.png
+scripts/test/shots
