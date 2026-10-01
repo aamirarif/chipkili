@@ -55,6 +55,9 @@ const outbox = () => {
   await page.goto(`${BASE}/c/computers?max=20&sort=price-asc`, { waitUntil: "networkidle" });
   const prices = await page.locator("main ul li a[href^='/i/'] p.font-bold").allInnerTexts();
   const nums = prices.map((p) => Number((p.match(/\$([\d,]+(?:\.\d+)?)/) || [])[1]?.replace(/,/g, "")));
+  const filterBtnVisible = await page.getByRole("button", { name: "Filters" }).first().isVisible();
+  const firstCard = await page.locator("main ul li a[href^='/i/']").first().boundingBox();
+  check("desktop layout: filters in the side column, products beside them", !filterBtnVisible && firstCard && firstCard.x > 250 && firstCard.y < 700, `card at x=${Math.round(firstCard?.x ?? 0)}, y=${Math.round(firstCard?.y ?? 0)}`);
   check("category + max price + sort filter", nums.length > 0 && nums.every((x) => x <= 20) && nums.every((x, i) => i === 0 || x >= nums[i - 1]), `${nums.length} items`);
   await page.screenshot({ path: path.join(SHOTS, "01_category_filtered.png") });
 

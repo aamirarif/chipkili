@@ -1,0 +1,9 @@
+-- ChipKili: let the Supabase API serve the "chipkili" schema (aigade-platform project).
+-- Supabase > SQL Editor > paste these two lines > Run.
+-- Why SQL and not the Data API settings page: this project has a database-level override that
+-- decides which schemas are exposed (currently public, graphql_public, crm, sonny). This keeps
+-- crm and sonny exactly as they are and adds chipkili.
+-- Do NOT press "Reset override" on the Data API settings page: that would drop crm and sonny.
+
+alter role authenticator set pgrst.db_schemas = 'public, graphql_public, crm, sonny, chipkili';
+notify pgrst, 'reload config';
