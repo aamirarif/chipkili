@@ -14,7 +14,12 @@ export const metadata: Metadata = {
     "Appliances, equipment, electronics and home finds near Teaneck, NJ. Local pickup, delivery available for a fee. New, open box and used.",
   applicationName: "ChipKili",
   icons: { icon: "/brand/face-32.png", apple: "/brand/face-192.png" },
-  openGraph: { siteName: "ChipKili", type: "website", locale: "en_US" },
+  openGraph: {
+    siteName: "ChipKili",
+    type: "website",
+    locale: "en_US",
+    images: [{ url: "/brand/og.png", width: 1200, height: 630, alt: "ChipKili - See It. Grab It. Go." }],
+  },
   twitter: { card: "summary_large_image" },
   formatDetection: { telephone: false },
 };

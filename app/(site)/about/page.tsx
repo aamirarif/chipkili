@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getSettings } from "lib/settings";
 import { money } from "lib/site";
-import { KiliIntro } from "components/kili-intro";
+import { KiliVideo } from "components/kili-video";
 import { PickupMap } from "components/pickup-map";
 
 export const metadata: Metadata = {
@@ -16,7 +16,7 @@ export default async function AboutPage() {
   return (
     <div className="mx-auto max-w-[1100px] px-4 pb-10 pt-8 lg:px-6">
       <section className="grid items-center gap-8 lg:grid-cols-2">
-        <KiliIntro />
+        <KiliVideo mode="intro" className="mx-auto w-full max-w-md" />
         <div>
           <p className="text-sm font-bold uppercase tracking-wider text-kili">Chip &middot; KIL-ee</p>
           <h1 className="heading mt-2 text-4xl">Meet Kili, the little lizard who grabs a good deal.</h1>

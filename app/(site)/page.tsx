@@ -9,6 +9,7 @@ import { DiscoverRail } from "components/discover-rail";
 import { PersonalRail, RecentStrip } from "components/rails";
 import { LocationChip, LocationForm } from "components/location-chip";
 import { ChevronIcon, PinIcon } from "components/icons";
+import { KiliVideo } from "components/kili-video";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
   return (
     <div className="mx-auto max-w-[1400px] px-4 pb-10 pt-6 lg:px-6">
       {/* hero */}
-      <section className="grid items-center gap-6 lg:grid-cols-[1fr_420px]">
+      <section className="grid items-center gap-6 lg:grid-cols-[160px_1fr_420px]">
+        <KiliVideo mode="loop" className="hidden w-40 lg:block" />
         <div>
           <h1 className="wordmark text-4xl leading-[1.02] text-chip sm:text-6xl">
             See It. Grab It. <span className="text-kili">Go.</span>
