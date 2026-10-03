@@ -1,7 +1,7 @@
 // Applies a staged patch (patch.json + media/) to EXISTING listings in a ChipKili data folder.
 // Run ONLY while the chipkili container is stopped (the file store is single-process).
 // Adds photos (after the current ones, skipping ids already present), sets model, upserts detail rows by label,
-// adds keywords. Price, status, quantity and title are never changed. Usage: node apply-item-patch.mjs <stage-dir> <data-dir>
+// adds keywords. Optional status / title / description are set only when the patch names them. Price is never changed. Usage: node apply-item-patch.mjs <stage-dir> <data-dir>
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
@@ -34,6 +34,9 @@ for (const p of patches) {
     details,
     keywords: [...new Set([...(it.keywords ?? []), ...p.keywords])],
     media: [...it.media, ...newMedia],
+    ...(p.title ? { title: p.title } : {}),
+    ...(p.description ? { description: p.description } : {}),
+    ...(p.status ? { status: p.status, soldAt: p.status === "sold" ? (it.soldAt ?? now) : it.soldAt } : {}),
     updatedAt: now,
   };
   console.log(`${p.code}: +${newMedia.length} photos (now ${it.media.length + newMedia.length}), details ${details.length}`);

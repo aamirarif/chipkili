@@ -1,7 +1,7 @@
 // Stages additions to EXISTING ChipKili listings (label photos, model, spec rows, keywords).
-// Never touches price, status, quantity or title. Apply with scripts/apply-item-patch.mjs.
+// Never touches price; status / title / description change only when the spec names them. Apply with scripts/apply-item-patch.mjs.
 // Usage: node scripts/stage-item-patch.mjs <patch-spec.json> <out-dir>
-// spec: [{ code, model?, details?: [{label,value}], keywords?: [], photos?: [absolute file paths] }]
+// spec: [{ code, status?, title?, description?, model?, details?: [{label,value}], keywords?: [], photos?: [absolute file paths] }]
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -29,7 +29,7 @@ const patches = [];
 for (const s of specs) {
   const media = [];
   for (const f of s.photos ?? []) media.push(await photo(f, `${s.code} ${s.altBase ?? "photo"} ${media.length + 1}`));
-  patches.push({ code: s.code, model: s.model, details: s.details ?? [], keywords: s.keywords ?? [], media });
+  patches.push({ code: s.code, status: s.status, title: s.title, description: s.description, model: s.model, details: s.details ?? [], keywords: s.keywords ?? [], media });
   console.log(`${s.code}: ${media.length} photos, ${(s.details ?? []).length} detail rows${s.model ? `, model ${s.model}` : ""}`);
 }
 await fs.writeFile(path.join(OUT, "patch.json"), JSON.stringify(patches, null, 1));
