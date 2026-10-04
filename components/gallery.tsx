@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Media } from "lib/types";
+import { mediaSize } from "lib/media-url";
 import { ChevronIcon, CloseIcon, PlayIcon } from "components/icons";
 
 export function Gallery({ media, title }: { media: Media[]; title: string }) {
@@ -43,7 +44,7 @@ export function Gallery({ media, title }: { media: Media[]; title: string }) {
         <button type="button" onClick={() => !big && setFull(true)} className={`block h-full w-full ${big ? "cursor-default" : "cursor-zoom-in"}`} aria-label="Open full screen">
           <Image
             key={cur.id}
-            src={big ? cur.src : cur.src.replace(/lg\.webp$/, "md.webp").replace(/md\.webp$/, i === 0 ? "lg.webp" : "md.webp")}
+            src={big || i === 0 ? cur.src : mediaSize(cur.src, "md")}
             alt={cur.alt ?? `${title} photo ${i + 1}`}
             fill
             sizes={big ? "100vw" : "(max-width: 1024px) 100vw, 60vw"}

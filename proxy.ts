@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 /**
  * - admin.chipkili.com/* is served from /admin/* (and /admin is not reachable on the public host in production)
  * - /<INDEXNOW_KEY>.txt answers the IndexNow ownership check
+ * - http:// and www. requests are sent (301) to the one canonical https://chipkili.com address
  * - every visitor gets an anonymous device id cookie (spam limits, verified-device memory)
  */
 export function proxy(req: NextRequest) {
@@ -12,6 +13,15 @@ export function proxy(req: NextRequest) {
   const key = process.env.INDEXNOW_KEY;
 
   if (key && url.pathname === `/${key}.txt`) return new NextResponse(key, { headers: { "Content-Type": "text/plain" } });
+
+  // one public address for search engines: http and www go to https://chipkili.com (Cloudflare reports the visitor scheme)
+  if (process.env.NODE_ENV === "production" && host !== adminHost) {
+    const scheme = req.headers.get("cf-visitor")?.match(/"scheme":"(\w+)"/)?.[1];
+    if (host.startsWith("www.") || scheme === "http") {
+      const site = new URL(process.env.SITE_URL || "https://chipkili.com");
+      return NextResponse.redirect(new URL(`${url.pathname}${url.search}`, site), 301);
+    }
+  }
 
   let res: NextResponse;
   if (adminHost && host === adminHost) {

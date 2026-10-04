@@ -63,6 +63,19 @@ function toCard(item: Item, cats: Category[], from: Point): Card {
   };
 }
 
+/** Per category (children included): how many listings are for sale now, and when the newest one changed. */
+export async function categoryStats(): Promise<Map<string, { forSale: number; updatedAt: string | null }>> {
+  const [items, cats] = await Promise.all([getAllItems(), getCategories()]);
+  const out = new Map<string, { forSale: number; updatedAt: string | null }>();
+  for (const c of cats) {
+    const family = categoryFamily(cats, c.id);
+    const mine = items.filter((i) => PUBLIC.has(i.status) && family.has(i.categoryId));
+    const updatedAt = mine.reduce<string | null>((max, i) => (!max || i.updatedAt > max ? i.updatedAt : max), null);
+    out.set(c.id, { forSale: mine.length, updatedAt });
+  }
+  return out;
+}
+
 export async function publicCards(from: Point): Promise<Card[]> {
   const [items, cats] = await Promise.all([getAllItems(), getCategories()]);
   return items.filter((i) => PUBLIC.has(i.status)).map((i) => toCard(i, cats, from));

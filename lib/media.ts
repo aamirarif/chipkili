@@ -4,6 +4,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { newId } from "lib/crypto";
 import type { Media } from "lib/types";
+import { mediaSize } from "lib/media-url";
 
 export const MEDIA_ROOT = path.join(process.env.DATA_DIR || path.join(process.cwd(), "data"), "media");
 /** Uploads from the public (Sell to ChipKili) live here and are served to the signed-in owner only. */
@@ -74,8 +75,20 @@ export function mediaPath(parts: string[]): { file: string; private: boolean } |
   const rest = priv ? parts.slice(1) : parts;
   if (rest.length !== 2) return null;
   const [id, file] = rest as [string, string];
-  if (!/^[a-f0-9]{16}$/.test(id) || !/^(lg|md|th)\.webp$|^video\.(mp4|webm|mov)$/.test(file)) return null;
-  return { file: path.join(priv ? PRIVATE_ROOT : MEDIA_ROOT, id, file), private: priv };
+  if (!/^[a-f0-9]{16}$/.test(id)) return null;
+  const disk = diskName(file);
+  if (!disk) return null;
+  return { file: path.join(priv ? PRIVATE_ROOT : MEDIA_ROOT, id, disk), private: priv };
+}
+
+/** Descriptive names (lib/media-url) map to the short files on disk: name.webp is lg, name-md/-th.webp the smaller sizes. */
+function diskName(file: string): string | null {
+  if (/^(lg|md|th)\.webp$|^video\.(mp4|webm|mov)$/.test(file)) return file;
+  const m = file.match(/^([a-z0-9]+(?:-[a-z0-9]+)*)\.(webp|mp4|webm|mov)$/);
+  if (!m || file.length > 160) return null;
+  if (m[2] !== "webp") return `video.${m[2]}`;
+  const size = m[1]!.match(/-(md|th)$/)?.[1];
+  return `${size ?? "lg"}.webp`;
 }
 
 /** Moves owner-only media (from a Sell request) into public media when it becomes a listing. */
@@ -94,5 +107,5 @@ export async function publishMedia(list: Media[]): Promise<Media[]> {
 }
 
 export function mdOf(m: Media): string {
-  return m.kind === "image" ? m.src.replace(/lg\.webp$/, "md.webp") : m.thumb;
+  return m.kind === "image" ? mediaSize(m.src, "md") : m.thumb;
 }

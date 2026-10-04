@@ -24,16 +24,32 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <JsonLd
         data={{
           "@context": "https://schema.org",
-          "@type": "LocalBusiness",
-          "@id": `${SITE_URL}/#seller`,
-          name: "ChipKili",
-          slogan: "See It. Grab It. Go.",
-          url: SITE_URL,
-          logo: `${SITE_URL}/brand/face-192.png`,
-          telephone: s.publicPhone,
-          areaServed: ["Teaneck NJ", "Bergen County NJ", "North Jersey", "New York City"],
-          address: { "@type": "PostalAddress", addressLocality: "Teaneck", addressRegion: "NJ", postalCode: s.pickupZip, addressCountry: "US" },
-          sameAs: s.ebayStoreUrl ? [s.ebayStoreUrl] : [],
+          "@graph": [
+            {
+              // one seller, no storefront: Organization (not LocalBusiness), and the pickup address stays private
+              "@type": "Organization",
+              "@id": `${SITE_URL}/#seller`,
+              name: "ChipKili",
+              slogan: "See It. Grab It. Go.",
+              url: SITE_URL,
+              logo: `${SITE_URL}/brand/face-192.png`,
+              telephone: s.publicPhone,
+              areaServed: ["Teaneck NJ", "Bergen County NJ", "North Jersey", "New York City"],
+              sameAs: s.ebayStoreUrl ? [s.ebayStoreUrl] : [],
+            },
+            {
+              "@type": "WebSite",
+              "@id": `${SITE_URL}/#website`,
+              name: "ChipKili",
+              url: SITE_URL,
+              publisher: { "@id": `${SITE_URL}/#seller` },
+              potentialAction: {
+                "@type": "SearchAction",
+                target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/search?q={search_term_string}` },
+                "query-input": "required name=search_term_string",
+              },
+            },
+          ],
         }}
       />
     </>

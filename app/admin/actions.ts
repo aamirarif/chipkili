@@ -11,6 +11,7 @@ import { adminPending, clearAdmin, clearAdminPending, setAdmin, setAdminPending 
 import { isBlocked, limited } from "lib/http";
 import { logActivity } from "lib/leads";
 import { publishMedia, saveUpload } from "lib/media";
+import { seoMedia } from "lib/media-url";
 import { getSettings, saveSettings } from "lib/settings";
 import { blankItem, insertNewItem, slugify, townPoint } from "lib/items";
 import { newId } from "lib/crypto";
@@ -130,6 +131,8 @@ export async function saveItem(input: ItemInputT): Promise<ActionResult> {
       priceHistory: priceChanged ? [...base.priceHistory, { price: d.price, at: now }] : base.priceHistory,
       ...townPoint(d.town),
       details: d.details.filter((r) => r.label.trim() && r.value.trim()),
+      // descriptive photo URLs and alt text from the title; also rebuilds src from the media id
+      media: seoMedia(d.title, d.media),
       testedOn: d.testedOn || undefined,
       whatsIncluded: d.whatsIncluded || undefined,
       dimensions: d.dimensions || undefined,

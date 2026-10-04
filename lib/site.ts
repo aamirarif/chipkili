@@ -9,6 +9,14 @@ export function money(n: number): string {
   return n % 1 === 0 ? `$${n.toLocaleString("en-US")}` : `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+/** Shortens text to at most max characters on a word boundary (search titles and snippets), with an ellipsis when cut. */
+export function cutWords(text: string, max: number, ellipsis = true): string {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - (ellipsis ? 1 : 0)).replace(/[\s,;:.\-–]+\S*$/, "").replace(/[\s,;:.\-–]+$/, "");
+  return ellipsis ? `${cut}…` : cut;
+}
+
 export function timeAgo(iso: string): string {
   const s = (Date.now() - Date.parse(iso)) / 1000;
   if (s < 3600) return `${Math.max(1, Math.round(s / 60))} min ago`;

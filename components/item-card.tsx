@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CONDITION_LABEL } from "lib/types";
 import { formatMiles } from "lib/geo";
 import { money } from "lib/site";
+import { mediaSize } from "lib/media-url";
 import { SaveButton } from "components/save-button";
 
 export type { CardData } from "lib/card";
@@ -32,7 +33,7 @@ export function ItemCard({ item, priority = false, size = "md" }: { item: CardDa
       <div className="relative aspect-square overflow-hidden rounded-[var(--radius-card)] bg-cream-2">
         {photo ? (
           <Image
-            src={photo.src.replace(/lg\.webp$/, size === "sm" ? "th.webp" : "md.webp")}
+            src={mediaSize(photo.src, size === "sm" ? "th" : "md")}
             alt={photo.alt ?? item.title}
             fill
             sizes={size === "sm" ? "160px" : "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 260px"}

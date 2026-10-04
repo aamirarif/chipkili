@@ -5,7 +5,7 @@ import { alsoViewed, categoryPath, getCategories, getItemBySlug, lastDrop, relat
 import { getSettings } from "lib/settings";
 import { visitorLocation } from "lib/visitor";
 import { formatMiles, milesBetween } from "lib/geo";
-import { absolute, money, shortDate, timeAgo } from "lib/site";
+import { absolute, cutWords, money, shortDate, timeAgo } from "lib/site";
 import { CONDITION_HELP, CONDITION_LABEL } from "lib/types";
 import { Gallery } from "components/gallery";
 import { ContactSeller } from "components/contact-seller";
@@ -18,14 +18,22 @@ import { PickupMap } from "components/pickup-map";
 
 type Props = { params: Promise<{ slug: string }> };
 
+const SEO_TITLE_MAX = 60;
+/** Offer prices are re-stated on every save; Google wants an end date on the price. */
+const PRICE_VALID_DAYS = 45;
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const item = await getItemBySlug((await params).slug);
   if (!item) return {};
-  const title = item.seoTitle || `${item.title} - ${money(item.price)}`;
-  const description = (
+  // search results show about 60 characters: keep the price only when it fits, cut on a word boundary
+  const withPrice = `${item.title} - ${money(item.price)}`;
+  const title = item.seoTitle || (withPrice.length <= SEO_TITLE_MAX ? withPrice : cutWords(item.title, SEO_TITLE_MAX, false));
+  const description =
     item.seoDescription ||
-    `${CONDITION_LABEL[item.condition]} ${item.title} for ${money(item.price)}. Local pickup in ${item.town}${item.delivery ? ", delivery available for a fee" : ""}. ${item.description}`
-  ).slice(0, 158);
+    cutWords(
+      `${CONDITION_LABEL[item.condition]} ${item.title} for ${money(item.price)}. Local pickup in ${item.town}${item.delivery ? ", delivery available for a fee" : ""}. ${item.description}`,
+      158,
+    );
   const img = item.media.find((m) => m.kind === "image");
   return {
     title,
@@ -101,6 +109,12 @@ export default async function ItemPage({ params }: Props) {
             ) : null}
           </div>
 
+          {sold ? (
+            <p className="mt-5 rounded-2xl bg-sage p-4 text-sm">
+              This one is gone. <Link href={similarHref} className="font-semibold underline">Browse {cat?.name.toLowerCase() ?? "similar items"}</Link> or{" "}
+              <Link href="/find" className="font-semibold underline">tell us what you are looking for</Link> and we will find it for you.
+            </p>
+          ) : null}
           {sold && similar.length ? <Strip title="Similar items still available" cards={similar.map(toCardData)} /> : null}
 
           <section className="mt-8">
@@ -242,13 +256,32 @@ export default async function ItemPage({ params }: Props) {
                 priceCurrency: "USD",
                 itemCondition: `https://schema.org/${item.condition === "new" ? "NewCondition" : item.condition === "for-parts" ? "DamagedCondition" : item.condition === "open-box" ? "RefurbishedCondition" : "UsedCondition"}`,
                 availability: `https://schema.org/${sold ? "SoldOut" : item.availableToOrder ? "PreOrder" : "InStock"}`,
+                priceValidUntil: new Date(Date.parse(item.updatedAt) + PRICE_VALID_DAYS * 86400000).toISOString().slice(0, 10),
                 availableDeliveryMethod: "https://schema.org/OnSitePickup",
                 areaServed: "Teaneck, NJ",
+                // local pickup or paid local delivery only: nothing ships, and buyers inspect before paying
+                shippingDetails: {
+                  "@type": "OfferShippingDetails",
+                  doesNotShip: true,
+                  shippingDestination: { "@type": "DefinedRegion", addressCountry: "US" },
+                },
+                hasMerchantReturnPolicy: {
+                  "@type": "MerchantReturnPolicy",
+                  applicableCountry: "US",
+                  returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+                },
                 seller: { "@id": absolute("/#seller") },
               },
               subjectOf: item.media
                 .filter((m) => m.kind === "video")
-                .map((m) => ({ "@type": "VideoObject", name: item.title, contentUrl: absolute(m.src), thumbnailUrl: absolute(photo?.src ?? "/brand/face-192.png"), uploadDate: item.createdAt })),
+                .map((m) => ({
+                  "@type": "VideoObject",
+                  name: m.alt ?? item.title,
+                  description: item.title,
+                  contentUrl: absolute(m.src),
+                  thumbnailUrl: absolute(m.thumb.startsWith("/media/") ? m.thumb : (photo?.src ?? "/brand/face-192.png")),
+                  uploadDate: item.createdAt,
+                })),
             },
             {
               "@type": "BreadcrumbList",

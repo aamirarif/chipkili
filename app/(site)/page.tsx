@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { getCategories, publicCards, shuffle } from "lib/catalog";
@@ -14,6 +15,15 @@ import { KiliVideo } from "components/kili-video";
 export const dynamic = "force-dynamic";
 
 const PER_PAGE = 24;
+
+/** Page 1 is the indexed home page; later pages stay crawlable for the listings but out of the index. */
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ page?: string }> }): Promise<Metadata> {
+  const page = Number((await searchParams).page) || 1;
+  return {
+    alternates: { canonical: "/" },
+    robots: page > 1 ? { index: false, follow: true } : undefined,
+  };
+}
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const [{ page: pageRaw }, settings, cats, loc] = await Promise.all([searchParams, getSettings(), getCategories(), visitorLocation()]);
@@ -101,7 +111,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
           <ul className="mt-5 grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 xl:grid-cols-4">
             {shown.map((c, i) => (
               <li key={c.id}>
-                <ItemCard item={toCardData(c)} priority={i < 4} />
+                <ItemCard item={toCardData(c)} priority={i === 0} />
               </li>
             ))}
           </ul>
