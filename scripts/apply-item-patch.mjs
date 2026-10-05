@@ -36,6 +36,7 @@ for (const p of patches) {
     media: [...it.media, ...newMedia],
     ...(p.title ? { title: p.title } : {}),
     ...(p.condition ? { condition: p.condition } : {}),
+    ...(p.brand ? { brand: p.brand } : {}),
     ...(p.price > 0 && p.price !== it.price ? { price: p.price, priceHistory: [...(it.priceHistory ?? []), { price: p.price, at: now }] } : {}),
     ...(p.description ? { description: p.description } : {}),
     ...(p.status ? { status: p.status, soldAt: p.status === "sold" ? (it.soldAt ?? now) : it.soldAt } : {}),

@@ -29,7 +29,7 @@ const patches = [];
 for (const s of specs) {
   const media = [];
   for (const f of s.photos ?? []) media.push(await photo(f, `${s.code} ${s.altBase ?? "photo"} ${media.length + 1}`));
-  patches.push({ code: s.code, price: s.price, condition: s.condition, status: s.status, title: s.title, description: s.description, model: s.model, details: s.details ?? [], keywords: s.keywords ?? [], media });
+  patches.push({ code: s.code, brand: s.brand, price: s.price, condition: s.condition, status: s.status, title: s.title, description: s.description, model: s.model, details: s.details ?? [], keywords: s.keywords ?? [], media });
   console.log(`${s.code}: ${media.length} photos, ${(s.details ?? []).length} detail rows${s.model ? `, model ${s.model}` : ""}`);
 }
 await fs.writeFile(path.join(OUT, "patch.json"), JSON.stringify(patches, null, 1));
