@@ -7,7 +7,17 @@ const fredoka = Fredoka({ subsets: ["latin"], weight: ["600", "700"], variable: 
 const youngSerif = Young_Serif({ subsets: ["latin"], weight: "400", variable: "--font-young-serif", display: "swap" });
 const instrument = Instrument_Sans({ subsets: ["latin"], variable: "--font-instrument", display: "swap" });
 
-export const metadata: Metadata = {
+/** Search Console / Bing Webmaster ownership tags come from the server settings (not code), read per request. */
+export async function generateMetadata(): Promise<Metadata> {
+  const google = process.env.GOOGLE_SITE_VERIFICATION;
+  const bing = process.env.BING_SITE_VERIFICATION;
+  return {
+    ...BASE_METADATA,
+    verification: { google: google || undefined, other: bing ? { "msvalidate.01": bing } : undefined },
+  };
+}
+
+const BASE_METADATA: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: "ChipKili - See It. Grab It. Go.", template: "%s | ChipKili" },
   description:
