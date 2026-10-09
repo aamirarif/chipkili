@@ -18,7 +18,8 @@ import { PickupMap } from "components/pickup-map";
 
 type Props = { params: Promise<{ slug: string }> };
 
-const SEO_TITLE_MAX = 60;
+// the layout template adds " | ChipKili" (11 chars): 48 keeps the whole title under about 60
+const SEO_TITLE_MAX = 48;
 /** Offer prices are re-stated on every save; Google wants an end date on the price. */
 const PRICE_VALID_DAYS = 45;
 
