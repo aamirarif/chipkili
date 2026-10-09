@@ -35,9 +35,11 @@ export function SellLayout({
           <p className="text-sm font-bold uppercase tracking-wider text-gold">Sell to ChipKili</p>
           <h1 className="wordmark mt-2 text-4xl leading-tight sm:text-5xl">{heading}</h1>
           <p className="mt-3 max-w-xl text-lg text-white/85">{sub}</p>
-          <a href={`tel:${phone}`} className="btn btn-gold mt-5">
-            <PhoneIcon className="size-5" /> Call or text {prettyPhone(phone)}
-          </a>
+          {phone ? (
+            <a href={`tel:${phone}`} className="btn btn-gold mt-5">
+              <PhoneIcon className="size-5" /> Call or text {prettyPhone(phone)}
+            </a>
+          ) : null}
         </div>
         <Image src="/kili/box.webp" alt="" width={260} height={190} className="mx-auto h-44 w-auto" priority />
       </section>

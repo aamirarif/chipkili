@@ -344,7 +344,7 @@ export async function updateSettings(input: Settings): Promise<ActionResult> {
       operatorLine: text(200),
       alertPhone: phone,
       alertEmail: z.email("Alert email is not valid"),
-      publicPhone: phone,
+      publicPhone: phone.or(z.literal("")),
       replyTime: text(40),
       pickupTown: text(60),
       pickupZip: z.string().regex(/^\d{5}$/, "ZIP must be 5 digits"),

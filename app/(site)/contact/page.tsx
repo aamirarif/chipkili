@@ -20,13 +20,15 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
         <ContactForm about={about?.replace(/[^A-Z0-9-]/gi, "").slice(0, 12)} />
       </section>
       <aside className="space-y-4">
-        <a href={`tel:${s.publicPhone}`} className="card flex items-center gap-3 p-5 hover:shadow-[var(--shadow-pop)]">
-          <PhoneIcon className="size-6 text-leaf" />
-          <span>
-            <span className="block font-bold">Call or text</span>
-            {prettyPhone(s.publicPhone)}
-          </span>
-        </a>
+        {s.publicPhone ? (
+          <a href={`tel:${s.publicPhone}`} className="card flex items-center gap-3 p-5 hover:shadow-[var(--shadow-pop)]">
+            <PhoneIcon className="size-6 text-leaf" />
+            <span>
+              <span className="block font-bold">Call or text</span>
+              {prettyPhone(s.publicPhone)}
+            </span>
+          </a>
+        ) : null}
         <div className="card p-5 text-sm text-ink-2">
           <p className="font-bold text-ink">Pickup area</p>
           <p>{s.pickupTown}. The exact address is texted after you confirm a pickup time.</p>

@@ -40,7 +40,7 @@ export function SettingsForm({ initial, notifyLive }: { initial: Settings; notif
       <section className={box}>
         <h2 className="text-lg font-bold">You and the site</h2>
         {text("operatorLine", "Who runs the site (footer and legal pages)")}
-        {text("publicPhone", "Public phone (Call about this item)", "Format: +12013444230")}
+        {text("publicPhone", "Public business line (leave empty to hide)", "Format: +12015550123. Never your personal cell.")}
         {text("replyTime", "Usually replies within", 'For example "a few hours"')}
         {text("ebayStoreUrl", "eBay store link")}
         {text("heroText", "Home page text under the slogan")}

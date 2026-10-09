@@ -33,7 +33,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
               slogan: "See It. Grab It. Go.",
               url: SITE_URL,
               logo: `${SITE_URL}/brand/face-192.png`,
-              telephone: s.publicPhone,
+              telephone: s.publicPhone || undefined,
               areaServed: ["Teaneck NJ", "Bergen County NJ", "North Jersey", "New York City"],
               sameAs: s.ebayStoreUrl ? [s.ebayStoreUrl] : [],
             },

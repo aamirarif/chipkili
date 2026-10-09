@@ -7,7 +7,8 @@ export const DEFAULT_SETTINGS: Settings = {
   operatorLine: "ChipKili is run by an individual seller based in Teaneck, NJ.",
   alertPhone: "+12013444230",
   alertEmail: "aamirarif@gmail.com",
-  publicPhone: "+12013444230",
+  // empty = no public number on the site; buyers use the verified Message seller / contact forms
+  publicPhone: "",
   replyTime: "a few hours",
   pickupTown: "Teaneck, NJ",
   pickupZip: "07666",

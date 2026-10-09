@@ -199,9 +199,11 @@ export default async function ItemPage({ params }: Props) {
               {settings.pickupTown} · Usually replies within {settings.replyTime}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <a href={`tel:${settings.publicPhone}`} className="chip !bg-cream">
-                <PhoneIcon className="size-4" /> Call about this item
-              </a>
+              {settings.publicPhone ? (
+                <a href={`tel:${settings.publicPhone}`} className="chip !bg-cream">
+                  <PhoneIcon className="size-4" /> Call about this item
+                </a>
+              ) : null}
               <Link href="/search" className="chip !bg-cream">
                 All items from seller
               </Link>
