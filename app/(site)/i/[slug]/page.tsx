@@ -66,6 +66,7 @@ export default async function ItemPage({ params }: Props) {
   const photo = item.media.find((m) => m.kind === "image");
   const similarHref = cat ? `/c/${cat.slug}` : "/search";
   const band = settings.deliveryBands.find((b) => miles <= b.upToMiles);
+  const seoBrand = item.brand || item.details.find((d) => d.label.toLowerCase() === "brand")?.value;
   const details = [
     { label: "Condition", value: CONDITION_LABEL[item.condition] },
     { label: "Brand", value: item.brand },
@@ -245,8 +246,10 @@ export default async function ItemPage({ params }: Props) {
               sku: item.code,
               description: item.description.slice(0, 5000),
               image: item.media.filter((m) => m.kind === "image").map((m) => absolute(m.src)),
-              brand: item.brand ? { "@type": "Brand", name: item.brand } : undefined,
+              // global identifiers Google asks for: brand (field, or a "Brand" detail row) and the model number as mpn
+              brand: seoBrand ? { "@type": "Brand", name: seoBrand } : undefined,
               model: item.model,
+              mpn: item.model,
               category: cat?.name,
               keywords: item.keywords.join(", "),
               offers: {
@@ -256,6 +259,8 @@ export default async function ItemPage({ params }: Props) {
                 priceCurrency: "USD",
                 itemCondition: `https://schema.org/${item.condition === "new" ? "NewCondition" : item.condition === "for-parts" ? "DamagedCondition" : item.condition === "open-box" ? "RefurbishedCondition" : "UsedCondition"}`,
                 availability: `https://schema.org/${sold ? "SoldOut" : item.availableToOrder ? "PreOrder" : "InStock"}`,
+                // the current price took effect on its last price change (or when the listing went up)
+                validFrom: item.priceHistory.at(-1)?.at ?? item.createdAt,
                 priceValidUntil: new Date(Date.parse(item.updatedAt) + PRICE_VALID_DAYS * 86400000).toISOString().slice(0, 10),
                 availableDeliveryMethod: "https://schema.org/OnSitePickup",
                 areaServed: "Teaneck, NJ",
