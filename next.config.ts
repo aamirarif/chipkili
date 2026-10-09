@@ -20,6 +20,7 @@ const csp = [
 ].join("; ");
 
 const config: NextConfig = {
+  poweredByHeader: false,
   output: "standalone",
   images: {
     formats: ["image/avif", "image/webp"],

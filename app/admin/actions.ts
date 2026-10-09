@@ -69,6 +69,9 @@ export async function logout() {
 
 /* ---------- listings ---------- */
 
+const MEDIA_ID = /^[a-f0-9]{16}$/;
+const MEDIA_URL = /^\/media\/(p\/)?[a-f0-9]{16}\/[a-z0-9]+(-[a-z0-9]+)*\.(webp|mp4|webm|mov)$/;
+
 const ItemInput = z.object({
   id: z.string().optional(),
   title: z.string().trim().min(3, "Title is too short").max(120),
@@ -89,7 +92,20 @@ const ItemInput = z.object({
   dimensions: z.string().max(120).optional(),
   town: z.string().max(60),
   delivery: z.boolean(),
-  media: z.array(z.object({ id: z.string(), kind: z.enum(["image", "video"]), src: z.string(), thumb: z.string(), width: z.number().optional(), height: z.number().optional(), alt: z.string().max(200).optional() })).max(40),
+  // only our own uploaded media: /media/<16 hex>/<name> (or owner-only /media/p/...); never an outside URL
+  media: z
+    .array(
+      z.object({
+        id: z.string().regex(MEDIA_ID),
+        kind: z.enum(["image", "video"]),
+        src: z.string().regex(MEDIA_URL),
+        thumb: z.string().regex(MEDIA_URL).or(z.literal("/kili/box.webp")),
+        width: z.number().optional(),
+        height: z.number().optional(),
+        alt: z.string().max(200).optional(),
+      }),
+    )
+    .max(40),
   keywords: z.array(z.string().trim().min(1).max(60)).max(25),
   seoTitle: z.string().max(80).optional(),
   seoDescription: z.string().max(170).optional(),
