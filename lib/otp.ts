@@ -7,10 +7,12 @@ export const OTP_TTL_MS = 5 * 60 * 1000;
 export const MAX_PER_PHONE_10MIN = 3;
 export const MAX_PER_DEVICE_DAY = 10;
 export const MAX_ATTEMPTS = 5;
+export const MAX_GLOBAL_DAY = 300;
+const PRUNE_AFTER_MS = 2 * 864e5;
 
 export type SendOtpResult =
   | { ok: true; channel: "sms" | "voice"; devCode?: string }
-  | { ok: false; reason: "rate_phone" | "rate_device" | "send_failed"; detail?: string };
+  | { ok: false; reason: "rate_phone" | "rate_device" | "rate_global" | "send_failed"; detail?: string };
 
 function hashCode(phone: string, code: string): string {
   return sha256(`${phone}:${code}`);
@@ -36,6 +38,12 @@ export async function sendOtp(
   if (recentPhone.length >= MAX_PER_PHONE_10MIN) return { ok: false, reason: "rate_phone" };
   const dayDevice = all.filter((o) => o.deviceId === deviceId && now - Date.parse(o.createdAt) < 864e5);
   if (dayDevice.length >= MAX_PER_DEVICE_DAY) return { ok: false, reason: "rate_device" };
+  // site-wide daily cap on public codes, so a swarm of devices cannot run up the texting bill
+  if (purpose !== "admin" && all.filter((o) => o.purpose !== "admin" && now - Date.parse(o.createdAt) < 864e5).length >= MAX_GLOBAL_DAY) {
+    return { ok: false, reason: "rate_global" };
+  }
+  // keep the table small: codes are useless after 2 days
+  for (const o of all.filter((o) => now - Date.parse(o.createdAt) > PRUNE_AFTER_MS)) await db.remove("otp", o.id);
 
   // a new code cancels any earlier unused code for this phone
   for (const o of recentPhone.filter((o) => !o.used)) await db.put("otp", { ...o, used: true });

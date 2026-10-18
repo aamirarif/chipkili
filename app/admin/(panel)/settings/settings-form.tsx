@@ -57,7 +57,7 @@ export function SettingsForm({ initial, notifyLive }: { initial: Settings; notif
             ? "Texts and emails are LIVE."
             : "Texts and emails are in test mode: nothing is sent, every message is written to the outbox log on the server. Switch on only after the texting number is approved."}
         </p>
-        {text("alertPhone", "Your cell for lead alerts", "Format: +12013444230")}
+        {text("alertPhone", "Your cell for lead alerts", "Format: +12015550123")}
         {text("alertEmail", "Your email for lead alerts")}
         {sms("smsLeadToOwner", "Text to you when a lead comes in")}
         {sms("smsAutoReply", "Automatic reply to the buyer (about an item)")}

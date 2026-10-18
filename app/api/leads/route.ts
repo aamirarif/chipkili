@@ -18,6 +18,7 @@ const Body = z.object({
 });
 
 const MAX_FILES = 10;
+const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 
 export async function POST(req: Request) {
   if (!sameOrigin(req)) return fail(403, "Bad origin");
@@ -27,6 +28,7 @@ export async function POST(req: Request) {
     return fail(429, "You have sent a lot of messages. Please wait a bit or call us.");
   }
 
+  if (Number(req.headers.get("content-length") ?? 0) > MAX_UPLOAD_BYTES) return fail(413, "That upload is too large.");
   const form = await req.formData().catch(() => null);
   if (!form) return fail(400, "Bad request");
   if (String(form.get("website") ?? "")) return ok(); // spam trap filled: pretend success, store nothing
@@ -53,6 +55,7 @@ export async function POST(req: Request) {
 
   const media: Media[] = [];
   const files = form.getAll("files").filter((f): f is File => f instanceof File && f.size > 0).slice(0, MAX_FILES);
+  if (files.reduce((n, f) => n + f.size, 0) > MAX_UPLOAD_BYTES) return fail(413, "Those files are too large together.");
   if (files.length && d.type !== "sell") return fail(400, "Uploads are only for Sell to ChipKili.");
   try {
     for (const f of files) media.push(await saveUpload(Buffer.from(await f.arrayBuffer()), f.type, { watermark: false, alt: `${d.name} upload`, private: true }));

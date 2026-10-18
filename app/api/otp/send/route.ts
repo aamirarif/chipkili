@@ -9,6 +9,7 @@ const Body = z.object({ phone: z.string().min(7).max(30), channel: z.enum(["sms"
 const REASON: Record<string, string> = {
   rate_phone: "Too many codes for this number. Wait 10 minutes and try again.",
   rate_device: "Too many codes from this device today. Try again tomorrow or call us.",
+  rate_global: "We are getting a lot of requests right now. Please try again in a little while.",
   send_failed: "We could not send the code right now. Try 'Call me instead' or call us.",
 };
 
@@ -20,6 +21,6 @@ export async function POST(req: Request) {
   const phone = toE164(parsed.data.phone);
   if (!phone) return fail(400, "Enter a valid 10-digit US mobile number.");
   const result = await sendOtp(phone, await visitorId(), parsed.data.channel);
-  if (!result.ok) return fail(result.reason === "send_failed" ? 502 : 429, REASON[result.reason] ?? "Could not send the code.");
+  if (!result.ok) return fail(result.reason === "send_failed" ? 502 : result.reason === "rate_global" ? 503 : 429, REASON[result.reason] ?? "Could not send the code.");
   return ok({ masked: maskPhone(phone), channel: result.channel, devCode: result.devCode });
 }

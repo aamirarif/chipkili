@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import { clientIp, limited } from "lib/http";
 import { getCategories, publicCards } from "lib/catalog";
 import { getSettings } from "lib/settings";
 import { TEANECK } from "lib/geo";
 import { expand, normalize, scoreItem, tokenize } from "lib/search";
 
 export async function GET(req: Request) {
+  if (limited(`suggest:${clientIp(req)}`, 120, 60_000)) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   const q = (new URL(req.url).searchParams.get("q") ?? "").slice(0, 80);
   if (!q.trim()) return NextResponse.json({ suggestions: [] });
   const [cards, cats, settings] = await Promise.all([publicCards(TEANECK), getCategories(), getSettings()]);

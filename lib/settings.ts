@@ -5,7 +5,8 @@ import type { Settings } from "lib/types";
 export const DEFAULT_SETTINGS: Settings = {
   sellerName: "ChipKili",
   operatorLine: "ChipKili is run by an individual seller based in Teaneck, NJ.",
-  alertPhone: "+12013444230",
+  // the owner's cell comes from the environment (OWNER_PHONE), never from source
+  alertPhone: process.env.OWNER_PHONE ?? "",
   alertEmail: "aamirarif@gmail.com",
   // empty = no public number on the site; buyers use the verified Message seller / contact forms
   publicPhone: "",
@@ -35,9 +36,9 @@ export const DEFAULT_SETTINGS: Settings = {
   smsLeadToOwner:
     'ChipKili lead: {name} {phone} about {item} ${price}. Msg: "{message}". Text them back directly.',
   smsAutoReply:
-    "Thanks {name}, Kili got your message about the {item}! Someone will text you shortly. Need an answer now? Call or text 201-344-4230. Saved items get price-drop alerts. Reply STOP to opt out.",
+    "Thanks {name}, Kili got your message about the {item}! Someone will text you shortly. Need an answer now? Just reply to this text. Saved items get price-drop alerts. Reply STOP to opt out.",
   smsContactAutoReply:
-    "Thanks {name}, Kili got your message! Someone will text you shortly. Need an answer now? Call or text 201-344-4230. Reply STOP to opt out.",
+    "Thanks {name}, Kili got your message! Someone will text you shortly. Need an answer now? Just reply to this text. Reply STOP to opt out.",
   weBuyTypes: [
     { slug: "restaurant-equipment", name: "Restaurant equipment", items: "Ovens, fryers, prep tables, mixers, slicers, warmers, smallwares" },
     { slug: "commercial-refrigeration", name: "Commercial refrigeration", items: "Reach-in coolers and freezers, prep coolers, display cases, ice machines" },

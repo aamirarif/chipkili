@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import { clientIp, limited } from "lib/http";
 import { getAllItems, getCategories, publicCards } from "lib/catalog";
 import { visitorLocation } from "lib/visitor";
 import { toCardData } from "lib/card";
 
 /** "Because you viewed ...": the category this visitor looked at most, excluding what they already saw. */
 export async function GET(req: Request) {
+  if (limited(`recs:${clientIp(req)}`, 120, 60_000)) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   const ids = (new URL(req.url).searchParams.get("ids") ?? "").split(",").filter(Boolean).slice(0, 30);
   const [items, cats, loc] = await Promise.all([getAllItems(), getCategories(), visitorLocation()]);
   const seen = new Set(ids);

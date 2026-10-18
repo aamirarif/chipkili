@@ -2,13 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { store } from "lib/store";
-import { adminConfigured, checkAdminPassword, checkAuthenticatorCode, requireAdmin } from "lib/admin-auth";
+import { adminConfigured, checkAdminPassword, requireAdmin } from "lib/admin-auth";
 import { sendOtp, verifyOtp } from "lib/otp";
 import { maskPhone } from "lib/phone";
 import { adminPending, clearAdmin, clearAdminPending, setAdmin, setAdminPending } from "lib/session";
-import { isBlocked, limited } from "lib/http";
+import { clientIp, isBlocked, limited } from "lib/http";
 import { logActivity } from "lib/leads";
 import { publishMedia, saveUpload } from "lib/media";
 import { seoMedia } from "lib/media-url";
@@ -24,11 +25,16 @@ export type ActionResult = { ok: boolean; error?: string; id?: string; media?: M
 
 export type LoginState = { ok: boolean; error?: string; step?: "password" | "code"; sentTo?: string };
 
+/** Failures are counted per IP and user, so a stranger on another IP cannot lock the owner out. */
+async function adminClientIp(): Promise<string> {
+  return clientIp(new Request("http://local/", { headers: await headers() }));
+}
+
 /** Step 1: user + password. On success a 6-digit code is texted (and emailed) to the owner. */
 export async function login(_prev: LoginState | null, form: FormData): Promise<LoginState> {
   if (!adminConfigured()) return { ok: false, step: "password", error: "Admin is not set up yet. Run: npm run admin:setup" };
   const user = String(form.get("user") ?? "");
-  const key = `admin-login:${user.toLowerCase()}`;
+  const key = `admin-login:${await adminClientIp()}:${user.toLowerCase()}`;
   if (isBlocked(key, 8)) return { ok: false, step: "password", error: "Too many wrong tries. Wait 15 minutes." };
   if (!checkAdminPassword(user, String(form.get("password") ?? ""))) {
     limited(key, 8, 15 * 60_000); // counts failures only
@@ -43,15 +49,15 @@ export async function login(_prev: LoginState | null, form: FormData): Promise<L
   return { ok: true, step: "code", sentTo: maskPhone(settings.alertPhone) };
 }
 
-/** Step 2: the texted code (or an authenticator-app code if one is set up). */
+/** Step 2: the texted code (the emailed copy is the same code). */
 export async function loginCode(_prev: LoginState | null, form: FormData): Promise<LoginState> {
   const user = await adminPending();
   if (!user) return { ok: false, step: "password", error: "That took too long. Start again with your password." };
   const code = String(form.get("code") ?? "").replace(/\D/g, "");
-  const key = `admin-code:${user.toLowerCase()}`;
+  const key = `admin-code:${await adminClientIp()}:${user.toLowerCase()}`;
   if (isBlocked(key, 8)) return { ok: false, step: "code", error: "Too many wrong codes. Wait 15 minutes." };
   const settings = await getSettings();
-  const ok = code.length === 6 && ((await verifyOtp(settings.alertPhone, code, "admin")).ok || checkAuthenticatorCode(code));
+  const ok = code.length === 6 && (await verifyOtp(settings.alertPhone, code, "admin")).ok;
   if (!ok) {
     limited(key, 8, 15 * 60_000);
     return { ok: false, step: "code", error: "That code is not right. Check the text and try again." };

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clientIp, limited } from "lib/http";
 import { getAllItems, getCategories } from "lib/catalog";
 import { visitorLocation } from "lib/visitor";
 import { milesBetween } from "lib/geo";
@@ -6,6 +7,7 @@ import { toCardData } from "lib/card";
 
 /** Cards for ids the browser remembers (recently viewed, saved). Only public statuses, plus sold for Saved. */
 export async function GET(req: Request) {
+  if (limited(`cards:${clientIp(req)}`, 120, 60_000)) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   const url = new URL(req.url);
   const ids = (url.searchParams.get("ids") ?? "").split(",").filter(Boolean).slice(0, 60);
   const includeSold = url.searchParams.get("includeSold") === "1";
