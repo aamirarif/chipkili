@@ -1,10 +1,11 @@
 version: 2
+# Version-update PRs are off (limit 0). Dependabot still opens PRs for security alerts.
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: monthly
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 0
     groups:
       all-npm:
         patterns: ["*"]
@@ -12,7 +13,7 @@ updates:
     directory: /
     schedule:
       interval: monthly
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 0
     groups:
       all-actions:
         patterns: ["*"]
