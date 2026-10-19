@@ -146,6 +146,16 @@ const outbox = () => {
   const adminCode = () =>
     outbox().filter((m) => m.channel === "sms" && m.to === OWNER_PHONE && /Admin sign-in code: \d{6}/.test(m.text)).pop().text.match(/\d{6}/)[0];
   check("admin code also emailed as backup", outbox().some((m) => m.channel === "email" && /Admin sign-in code/.test(m.subject)));
+  // the pending cookie outlives the page: a reload (phone switches to Messages) must stay on the code step
+  await admin.reload({ waitUntil: "networkidle" });
+  check("code step survives a reload", await admin.getByLabel("Code").waitFor({ timeout: 10000 }).then(() => true, () => false));
+  // "Start again" goes back to the password step, and the password step texts a fresh code (2 of 3 per 10 minutes)
+  await admin.getByRole("button", { name: /Start again/ }).click();
+  check("start again returns to the password step", await admin.getByLabel("Password").waitFor({ timeout: 10000 }).then(() => true, () => false));
+  const codesBefore = outbox().filter((m) => m.channel === "sms" && /Admin sign-in code/.test(m.text)).length;
+  await admin.getByLabel("Password").fill(fs.readFileSync(process.env.ADMIN_PW_FILE, "utf8").trim());
+  await admin.getByRole("button", { name: "Continue" }).click();
+  check("password again shows the code step and resends the code", (await admin.getByLabel("Code").waitFor({ timeout: 10000 }).then(() => true, () => false)) && outbox().filter((m) => m.channel === "sms" && /Admin sign-in code/.test(m.text)).length === codesBefore + 1);
   await admin.getByLabel("Code").fill(adminCode() === "000000" ? "111111" : "000000");
   await admin.getByRole("button", { name: "Sign in" }).click();
   check("wrong admin code refused", await admin.getByText("That code is not right").waitFor({ timeout: 10000 }).then(() => true, () => false));
