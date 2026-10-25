@@ -4,7 +4,7 @@ import type { Category, Condition, Item } from "lib/types";
 /**
  * Product feed for Google Merchant Center (RSS 2.0, g: namespace) and a matching CSV.
  * Pure functions over plain data: no server-only imports, so they are unit-testable.
- * Allowlist: live, non-empty title, price above zero, at least one public image, not for-parts.
+ * Allowlist: live, not available-to-order, non-empty title, price above zero, at least one public image, not for-parts.
  * Never emitted: phone, email, views, postedOn, ebayItemId, priceHistory, quantity, lat, lng, gtin.
  */
 
@@ -64,7 +64,8 @@ function publicImages(item: Item, siteUrl: string): string[] {
 
 export function isFeedEligible(item: Item): boolean {
   const hasTitle = Boolean(plain(item.seoTitle) || plain(item.title));
-  return item.status === "live" && hasTitle && Number.isFinite(item.price) && item.price > 0 && item.condition in CONDITION_MAP && item.media.some(isPublicImage);
+  // availableToOrder items are PreOrder on the page and would need availability_date here; keep them out so feed and page agree
+  return item.status === "live" && !item.availableToOrder && hasTitle && Number.isFinite(item.price) && item.price > 0 && item.condition in CONDITION_MAP && item.media.some(isPublicImage);
 }
 
 function describe(item: Item): string {

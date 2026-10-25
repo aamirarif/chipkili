@@ -134,3 +134,9 @@ test("channel title and description come from the caller, escaped", () => {
   assert.match(out, /<title>Shop &amp; Co<\/title>/);
   assert.match(out, /<description>Pickup in &quot;town&quot;<\/description>/);
 });
+
+test("available-to-order items stay out of the feed (page shows PreOrder)", () => {
+  const out = xml([item({ availableToOrder: true }), item({ id: "a7", code: "CK-1007", slug: "g" })]);
+  assert.equal(count(out), 1);
+  assert.ok(!out.includes("CK-1001"));
+});

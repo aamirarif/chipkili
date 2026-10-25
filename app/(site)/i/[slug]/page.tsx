@@ -260,7 +260,7 @@ export default async function ItemPage({ params }: Props) {
                 url: absolute(`/i/${item.slug}`),
                 price: item.price.toFixed(2),
                 priceCurrency: "USD",
-                itemCondition: `https://schema.org/${item.condition === "new" ? "NewCondition" : item.condition === "for-parts" ? "DamagedCondition" : item.condition === "open-box" ? "RefurbishedCondition" : "UsedCondition"}`,
+                itemCondition: `https://schema.org/${item.condition === "new" ? "NewCondition" : item.condition === "for-parts" ? "DamagedCondition" : "UsedCondition"}`, // open-box is Used (packaging opened), not Refurbished; matches the shopping feed
                 // pending and hold are reserved, not buyable now: InStock would disagree with the shopping feed (live only) and the page banner
                 availability: `https://schema.org/${sold ? "SoldOut" : item.availableToOrder ? "PreOrder" : item.status === "pending" || item.status === "hold" ? "LimitedAvailability" : "InStock"}`,
                 // the current price took effect on its last price change (or when the listing went up)
