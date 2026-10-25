@@ -56,7 +56,9 @@ function cut(text: string, max: number): string {
   return text.length <= max ? text : text.slice(0, max).trimEnd();
 }
 
-const isPublicImage = (m: Item["media"][number]): boolean => m.kind === "image" && m.src.startsWith("/media/") && !m.src.startsWith("/media/p/");
+const MIN_IMAGE_PX = 500; // Google Merchant Center floor (enforced from 2027-01-31); unknown sizes pass, known small ones are dropped
+const bigEnough = (m: Item["media"][number]): boolean => (m.width ?? MIN_IMAGE_PX) >= MIN_IMAGE_PX && (m.height ?? MIN_IMAGE_PX) >= MIN_IMAGE_PX;
+const isPublicImage = (m: Item["media"][number]): boolean => m.kind === "image" && m.src.startsWith("/media/") && !m.src.startsWith("/media/p/") && bigEnough(m);
 
 function publicImages(item: Item, siteUrl: string): string[] {
   return item.media.filter(isPublicImage).map((m) => `${siteUrl}${mediaSize(m.src, "lg")}`);

@@ -206,20 +206,16 @@ export async function setStatus(ids: string[], status: (typeof STATUSES)[number]
   if (!(STATUSES as readonly string[]).includes(status)) return { ok: false, error: "Bad status" };
   const db = store();
   const now = new Date().toISOString();
+  const changedPaths: string[] = [];
   for (const id of ids.slice(0, 500)) {
-    await db.update("items", id, (it) => ({ ...it, status, soldAt: status === "sold" ? (it.soldAt ?? now) : it.soldAt, updatedAt: now }));
+    const it = await db.update("items", id, (it) => ({ ...it, status, soldAt: status === "sold" ? (it.soldAt ?? now) : it.soldAt, updatedAt: now }));
+    if (it) changedPaths.push(`/i/${it.slug}`);
   }
-  await pingChanged(ids.slice(0, 500));
+  // one IndexNow POST for the whole batch, built from the update results (no re-read); the lib never throws
+  await pingIndexNow(changedPaths);
   await logActivity(who, `set ${ids.length} listing(s) to ${status}`);
   revalidatePath("/", "layout");
   return { ok: true };
-}
-
-/** Tells IndexNow engines about the item pages behind these ids (the lib gates on NOTIFY_MODE and the key). */
-async function pingChanged(ids: string[]): Promise<void> {
-  const db = store();
-  const found = await Promise.all(ids.map((id) => db.get("items", id)));
-  await pingIndexNow(found.flatMap((it) => (it ? [`/i/${it.slug}`] : [])));
 }
 
 export async function setPosted(id: string, channel: string, value: boolean): Promise<ActionResult> {

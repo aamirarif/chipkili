@@ -241,9 +241,10 @@ const outbox = () => {
     }, xmlText);
     const isPublicImage = (m) => m.kind === "image" && m.src.startsWith("/media/") && !m.src.startsWith("/media/p/");
     const liveItems = Object.values(JSON.parse(fs.readFileSync(path.join(DATA, "db.json"), "utf8")).items).filter(
-      (i) => i.status === "live" && i.price > 0 && i.condition !== "for-parts" && (i.media || []).some(isPublicImage),
+      (i) => i.status === "live" && !i.availableToOrder && ((i.seoTitle || i.title || "").trim()) && i.price > 0 && i.condition !== "for-parts" && (i.media || []).some(isPublicImage),
     );
-    const csvRows = (await feedCsv.text()).trim().split(/\r?\n/).length - 1;
+    // one record per quoted CK id at line start; quoted fields may contain newlines, so a plain line count is wrong
+    const csvRows = (await feedCsv.text()).split(/\r?\n/).filter((l) => /^"CK-\d+"/.test(l)).length;
     check("feed XML is well formed", !parsed.error);
     check("feed item count equals the live catalog count", parsed.items === liveItems.length && csvRows === liveItems.length, `xml ${parsed.items}, csv ${csvRows}, live ${liveItems.length}`);
   }
