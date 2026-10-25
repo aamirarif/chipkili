@@ -120,3 +120,17 @@ test("item count equals the number of qualifying items", () => {
   assert.equal(count(xml(items)), 2);
   assert.equal(csv(items).trim().split("\r\n").length, 3);
 });
+
+test("item with an empty title is excluded; a seoTitle alone is enough", () => {
+  const items = [item({ id: "a5", code: "CK-1005", slug: "e", title: "", seoTitle: "" }), item({ id: "a6", code: "CK-1006", slug: "f", title: "", seoTitle: "Hobart mixer 20 qt" })];
+  const out = xml(items);
+  assert.equal(count(out), 1);
+  assert.ok(!out.includes("CK-1005"));
+  assert.match(out, /<g:title>Hobart mixer 20 qt<\/g:title>/);
+});
+
+test("channel title and description come from the caller, escaped", () => {
+  const out = buildGoogleFeed([item()], cats, SITE, { title: "Shop & Co", description: "Pickup in \"town\"" });
+  assert.match(out, /<title>Shop &amp; Co<\/title>/);
+  assert.match(out, /<description>Pickup in &quot;town&quot;<\/description>/);
+});
