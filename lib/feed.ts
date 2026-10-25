@@ -116,15 +116,18 @@ function xmlItem(row: FeedRow): string {
   return `<item>${tags.join("")}</item>`;
 }
 
-export function buildGoogleFeed(items: Item[], categories: Category[], siteUrl: string): string {
+export type FeedChannel = { title: string; description: string };
+const DEFAULT_CHANNEL: FeedChannel = { title: "ChipKili", description: "" };
+
+export function buildGoogleFeed(items: Item[], categories: Category[], siteUrl: string, channel: FeedChannel = DEFAULT_CHANNEL): string {
   const body = rows(items, categories, siteUrl).map(xmlItem).join("\n");
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
     `<rss version="2.0" xmlns:g="${GOOGLE_NS}">`,
     "<channel>",
-    "<title>ChipKili</title>",
+    `<title>${xmlEscape(channel.title)}</title>`,
     `<link>${xmlEscape(siteUrl)}</link>`,
-    "<description>Appliances, equipment and electronics near Teaneck, NJ. Local pickup.</description>",
+    `<description>${xmlEscape(channel.description)}</description>`,
     body,
     "</channel>",
     "</rss>",
@@ -136,7 +139,7 @@ export function csvEscape(s: string): string {
   return `"${s.replace(/"/g, '""')}"`;
 }
 
-export function buildFeedCsv(items: Item[], categories: Category[], siteUrl: string): string {
+export function buildFeedCsv(items: Item[], categories: Category[], siteUrl: string, _channel: FeedChannel = DEFAULT_CHANNEL): string {
   const lines = rows(items, categories, siteUrl).map((r) => FEED_COLUMNS.map((c) => csvEscape(r[c])).join(","));
   return [FEED_COLUMNS.join(","), ...lines, ""].join("\r\n");
 }

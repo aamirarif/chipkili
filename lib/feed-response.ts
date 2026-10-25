@@ -15,5 +15,6 @@ export async function feedResponse(kind: keyof typeof TYPES): Promise<Response> 
   if (!settings.feedEnabled) return new Response("Not found", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
   const [items, cats] = await Promise.all([getAllItems(), getCategories()]);
   const { type, build } = TYPES[kind];
-  return new Response(build(items, cats, SITE_URL), { headers: { "Content-Type": type, "Cache-Control": "public, max-age=600" } });
+  const channel = { title: settings.sellerName, description: `${settings.operatorLine} ${settings.deliveryNote}`.trim() };
+  return new Response(build(items, cats, SITE_URL, channel), { headers: { "Content-Type": type, "Cache-Control": "public, max-age=600" } });
 }
