@@ -239,7 +239,7 @@ const outbox = () => {
       const d = new DOMParser().parseFromString(t, "application/xml");
       return { error: !!d.querySelector("parsererror"), items: d.getElementsByTagName("item").length };
     }, xmlText);
-    const isPublicImage = (m) => m.kind === "image" && m.src.startsWith("/media/") && !m.src.startsWith("/media/p/");
+    const isPublicImage = (m) => m.kind === "image" && m.src.startsWith("/media/") && !m.src.startsWith("/media/p/") && (m.width ?? 500) >= 500 && (m.height ?? 500) >= 500;
     const liveItems = Object.values(JSON.parse(fs.readFileSync(path.join(DATA, "db.json"), "utf8")).items).filter(
       (i) => i.status === "live" && !i.availableToOrder && ((i.seoTitle || i.title || "").trim()) && i.price > 0 && i.condition !== "for-parts" && (i.media || []).some(isPublicImage),
     );

@@ -70,12 +70,15 @@ export function isFeedEligible(item: Item): boolean {
   return item.status === "live" && !item.availableToOrder && hasTitle && Number.isFinite(item.price) && item.price > 0 && item.condition in CONDITION_MAP && item.media.some(isPublicImage);
 }
 
+const feedTitle = (item: Item): string => cut(plain(item.seoTitle) || plain(item.title), MAX_TITLE);
+
 function describe(item: Item): string {
   const base = plain(item.description);
   const included = plain(item.whatsIncluded);
   const full = included ? `${base}\nIncluded: ${included}` : base;
   const text = full.length <= MAX_DESCRIPTION ? full : base;
-  return cut(text, MAX_DESCRIPTION) || cut(plain(item.title), MAX_DESCRIPTION);
+  // description is required by Google; fall back to the same title the feed emits (seoTitle first), never to an empty string
+  return cut(text, MAX_DESCRIPTION) || feedTitle(item);
 }
 
 function toRow(item: Item, cat: Category | undefined, siteUrl: string): FeedRow {
@@ -84,7 +87,7 @@ function toRow(item: Item, cat: Category | undefined, siteUrl: string): FeedRow 
   const model = plain(item.model);
   return {
     id: cut(item.code, MAX_ID),
-    title: cut(plain(item.seoTitle) || plain(item.title), MAX_TITLE),
+    title: feedTitle(item),
     description: describe(item),
     link: `${siteUrl}/i/${item.slug}?src=gmc`,
     image_link: images[0] ?? "",

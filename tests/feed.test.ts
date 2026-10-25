@@ -148,3 +148,9 @@ test("images known to be under 500 px are skipped; unknown sizes pass", () => {
   const smallFirst = item({ media: [small, ...item().media] } as Partial<Item>);
   assert.match(xml([smallFirst]), /<g:image_link>https:\/\/chipkili\.com\/media\/ab12ab12ab12ab12\//);
 });
+
+test("empty description with an HTML-only title falls back to the seoTitle, so g:description is always present", () => {
+  const out = xml([item({ title: "<b></b>", seoTitle: "Hobart mixer 20 qt", description: "", whatsIncluded: "" })]);
+  assert.equal(count(out), 1);
+  assert.match(out, /<g:description>Hobart mixer 20 qt<\/g:description>/);
+});
