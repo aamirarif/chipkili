@@ -140,3 +140,11 @@ test("available-to-order items stay out of the feed (page shows PreOrder)", () =
   assert.equal(count(out), 1);
   assert.ok(!out.includes("CK-1001"));
 });
+
+test("images known to be under 500 px are skipped; unknown sizes pass", () => {
+  const small = { id: "ee56ee56ee56ee56", kind: "image", src: "/media/ee56ee56ee56ee56/x-image-1.webp", thumb: "/media/ee56ee56ee56ee56/x-image-1-th.webp", width: 320, height: 240 };
+  const onlySmall = item({ media: [small] } as Partial<Item>);
+  assert.equal(count(xml([onlySmall])), 0);
+  const smallFirst = item({ media: [small, ...item().media] } as Partial<Item>);
+  assert.match(xml([smallFirst]), /<g:image_link>https:\/\/chipkili\.com\/media\/ab12ab12ab12ab12\//);
+});
