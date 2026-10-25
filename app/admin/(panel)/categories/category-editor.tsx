@@ -26,6 +26,7 @@ export function CategoryEditor({ categories, counts, siteUrl }: { categories: Ca
         intro: edit.intro,
         ebayCategoryId: edit.ebayCategoryId,
         showInChips: edit.showInChips,
+        googleTaxonomy: edit.googleTaxonomy,
       });
       if (!res.ok) return setErr(res.error ?? "Could not save");
       setEdit(null);
@@ -117,6 +118,10 @@ export function CategoryEditor({ categories, counts, siteUrl }: { categories: Ca
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" className="size-4 accent-btn" checked={edit.showInChips} onChange={(e) => setEdit({ ...edit, showInChips: e.target.checked })} />
               Show in the menu chips (top categories with listings)
+            </label>
+            <label className="block">
+              <span className="label">Google product category (optional, for the shopping feed)</span>
+              <input className="field" value={edit.googleTaxonomy ?? ""} onChange={(e) => setEdit({ ...edit, googleTaxonomy: e.target.value })} placeholder="Home & Garden > Kitchen & Dining > Kitchen Appliances" />
             </label>
             <label className="block">
               <span className="label">Intro text for the category page and Google</span>

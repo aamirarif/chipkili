@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { store } from "lib/store";
+import { getSettings } from "lib/settings";
 import { SITE_URL } from "lib/site";
 
 export const metadata = { title: "Channels" };
@@ -12,6 +13,7 @@ const CHANNELS = [
 ];
 
 export default async function ChannelsPage() {
+  const feedOn = (await getSettings()).feedEnabled;
   const items = (await store().list("items")).filter((i) => i.status === "live" || i.status === "pending");
   const sold = (await store().list("items")).filter((i) => i.status === "sold" && Object.values(i.postedOn).some(Boolean));
   return (
@@ -71,11 +73,15 @@ export default async function ChannelsPage() {
         )}
       </section>
       <section className="card p-5 text-sm text-ink-2">
-        <h2 className="text-lg font-bold text-ink">Facebook and Google feeds</h2>
+        <h2 className="text-lg font-bold text-ink">Google shopping feed</h2>
         <p className="mt-1">
-          Off until proven: a catalog feed only goes live after one test item is approved and a price change and a removal are seen coming through (plan v1.1). Google
-          Shopping needs a checkout, so it stays off; items still reach Google through normal search, the sitemap ({SITE_URL}/sitemap.xml) and product data on every page.
+          Feed is <b>{feedOn ? "ON" : "OFF"}</b>. {feedOn ? "Live listings with a price and a photo are published at:" : "Switch it on in Settings. When on, it is published at:"}
         </p>
+        <ul className="mt-1 font-mono text-xs">
+          <li>{SITE_URL}/google-merchant.xml</li>
+          <li>{SITE_URL}/google-merchant.csv</li>
+        </ul>
+        <p className="mt-1">Free Google listings do not need a checkout. Items also reach Google through normal search, the sitemap ({SITE_URL}/sitemap.xml) and product data on every page.</p>
       </section>
     </div>
   );

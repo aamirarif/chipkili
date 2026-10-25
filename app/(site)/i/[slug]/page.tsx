@@ -261,7 +261,8 @@ export default async function ItemPage({ params }: Props) {
                 price: item.price.toFixed(2),
                 priceCurrency: "USD",
                 itemCondition: `https://schema.org/${item.condition === "new" ? "NewCondition" : item.condition === "for-parts" ? "DamagedCondition" : item.condition === "open-box" ? "RefurbishedCondition" : "UsedCondition"}`,
-                availability: `https://schema.org/${sold ? "SoldOut" : item.availableToOrder ? "PreOrder" : "InStock"}`,
+                // pending and hold are reserved, not buyable now: InStock would disagree with the shopping feed (live only) and the page banner
+                availability: `https://schema.org/${sold ? "SoldOut" : item.availableToOrder ? "PreOrder" : item.status === "pending" || item.status === "hold" ? "LimitedAvailability" : "InStock"}`,
                 // the current price took effect on its last price change (or when the listing went up)
                 validFrom: item.priceHistory.at(-1)?.at ?? item.createdAt,
                 priceValidUntil: new Date(Date.parse(item.updatedAt) + PRICE_VALID_DAYS * 86400000).toISOString().slice(0, 10),

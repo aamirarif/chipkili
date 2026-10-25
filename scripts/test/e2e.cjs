@@ -227,6 +227,27 @@ const outbox = () => {
   await admin.reload({ waitUntil: "networkidle" });
   check("share link click counted", (await admin.locator("tr", { hasText: label }).locator("td.font-bold").innerText()) === "1");
 
+  // 7b. Product feed: 404 while Settings.feedEnabled is off (default); when on, valid XML and CSV whose item count equals the live catalog
+  const feedXml = await ctx.request.get(`${BASE}/google-merchant.xml`);
+  const feedCsv = await ctx.request.get(`${BASE}/google-merchant.csv`);
+  if (feedXml.status() === 404 && feedCsv.status() === 404) {
+    check("product feed is off by default (404 on both URLs)", true);
+  } else {
+    check("product feed answers 200 on both URLs", feedXml.status() === 200 && feedCsv.status() === 200, `${feedXml.status()} / ${feedCsv.status()}`);
+    const xmlText = await feedXml.text();
+    const parsed = await page.evaluate((t) => {
+      const d = new DOMParser().parseFromString(t, "application/xml");
+      return { error: !!d.querySelector("parsererror"), items: d.getElementsByTagName("item").length };
+    }, xmlText);
+    const isPublicImage = (m) => m.kind === "image" && m.src.startsWith("/media/") && !m.src.startsWith("/media/p/");
+    const liveItems = Object.values(JSON.parse(fs.readFileSync(path.join(DATA, "db.json"), "utf8")).items).filter(
+      (i) => i.status === "live" && i.price > 0 && i.condition !== "for-parts" && (i.media || []).some(isPublicImage),
+    );
+    const csvRows = (await feedCsv.text()).trim().split(/\r?\n/).length - 1;
+    check("feed XML is well formed", !parsed.error);
+    check("feed item count equals the live catalog count", parsed.items === liveItems.length && csvRows === liveItems.length, `xml ${parsed.items}, csv ${csvRows}, live ${liveItems.length}`);
+  }
+
   // 8. Phone layout
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true });
   const p = await phone.newPage();

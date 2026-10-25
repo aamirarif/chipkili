@@ -51,6 +51,7 @@ export const DEFAULT_SETTINGS: Settings = {
     "Appliances, equipment and home finds near Teaneck. Everything listed on Facebook Marketplace and eBay, in one place, with the latest prices.",
   pinnedItemIds: [],
   watermark: true,
+  feedEnabled: false,
 };
 
 export async function getSettings(): Promise<Settings> {

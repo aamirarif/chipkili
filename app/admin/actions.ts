@@ -209,9 +209,17 @@ export async function setStatus(ids: string[], status: (typeof STATUSES)[number]
   for (const id of ids.slice(0, 500)) {
     await db.update("items", id, (it) => ({ ...it, status, soldAt: status === "sold" ? (it.soldAt ?? now) : it.soldAt, updatedAt: now }));
   }
+  await pingChanged(ids.slice(0, 500));
   await logActivity(who, `set ${ids.length} listing(s) to ${status}`);
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+/** Tells IndexNow engines about the item pages behind these ids (the lib gates on NOTIFY_MODE and the key). */
+async function pingChanged(ids: string[]): Promise<void> {
+  const db = store();
+  const found = await Promise.all(ids.map((id) => db.get("items", id)));
+  await pingIndexNow(found.flatMap((it) => (it ? [`/i/${it.slug}`] : [])));
 }
 
 export async function setPosted(id: string, channel: string, value: boolean): Promise<ActionResult> {
@@ -228,6 +236,7 @@ export async function deleteItem(id: string): Promise<ActionResult> {
   // archive instead of hard delete, so shared links show "no longer listed" and history is kept
   const it = await store().update("items", id, (x) => ({ ...x, status: "archived", updatedAt: new Date().toISOString() }));
   if (!it) return { ok: false, error: "Not found" };
+  await pingIndexNow([`/i/${it.slug}`]);
   await logActivity(who, "archived listing", `${it.code} ${it.title}`);
   revalidatePath("/", "layout");
   return { ok: true };
@@ -243,6 +252,7 @@ const CatInput = z.object({
   intro: z.string().max(1200).optional(),
   ebayCategoryId: z.string().max(20).optional(),
   showInChips: z.boolean(),
+  googleTaxonomy: z.string().max(250).optional(),
 });
 
 export async function saveCategory(input: z.infer<typeof CatInput>): Promise<ActionResult> {
@@ -250,7 +260,7 @@ export async function saveCategory(input: z.infer<typeof CatInput>): Promise<Act
   const p = CatInput.safeParse(input);
   if (!p.success) return { ok: false, error: p.error.issues[0]?.message };
   if (p.data.parentId === p.data.id) return { ok: false, error: "A category cannot be its own parent" };
-  await store().put("categories", { ...p.data, slug: p.data.id, parentId: p.data.parentId || undefined });
+  await store().put("categories", { ...p.data, slug: p.data.id, parentId: p.data.parentId || undefined, googleTaxonomy: p.data.googleTaxonomy?.trim() || undefined });
   await logActivity(who, "saved category", p.data.name);
   revalidatePath("/", "layout");
   return { ok: true };
@@ -369,6 +379,7 @@ export async function updateSettings(input: Settings): Promise<ActionResult> {
       heroText: text(300),
       pinnedItemIds: z.array(text(20)).max(24),
       watermark: z.boolean(),
+      feedEnabled: z.boolean(),
     })
     .strict()
     .safeParse(next);

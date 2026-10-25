@@ -51,6 +51,17 @@ export function SettingsForm({ initial, notifyLive }: { initial: Settings; notif
       </section>
 
       <section className={box}>
+        <h2 className="text-lg font-bold">Shopping feed</h2>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" className="size-4 accent-btn" checked={s.feedEnabled} onChange={(e) => set("feedEnabled", e.target.checked)} />
+          Publish the product feed for Google and other shopping sites (live listings with a price and a photo only)
+        </label>
+        <p className="text-xs text-ink-3">
+          Feed addresses: <span className="font-mono">/google-merchant.xml</span> and <span className="font-mono">/google-merchant.csv</span>. Both return &quot;not found&quot; while this is off.
+        </p>
+      </section>
+
+      <section className={box}>
         <h2 className="text-lg font-bold">Leads and alerts</h2>
         <p className={`rounded-xl p-3 text-sm ${notifyLive ? "bg-sage" : "bg-gold/25"}`}>
           {notifyLive

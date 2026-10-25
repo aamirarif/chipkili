@@ -94,6 +94,8 @@ export type Category = {
   icon?: string;
   ebayCategoryId?: string;
   showInChips: boolean;
+  /** Google product taxonomy string for the shopping feed; the feed omits the field when empty */
+  googleTaxonomy?: string;
 };
 
 export const LEAD_TYPES = ["message", "contact", "sell", "find"] as const;
@@ -147,6 +149,8 @@ export type Settings = {
   heroText: string;
   pinnedItemIds: string[];
   watermark: boolean;
+  /** serves /google-merchant.xml and .csv when true; both 404 when false */
+  feedEnabled: boolean;
 };
 
 export type AnalyticsEvent = {
