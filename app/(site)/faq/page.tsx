@@ -19,6 +19,7 @@ export default async function FaqPage() {
         ["Is the price negotiable?", "Ask in your message. Some prices are firm, some are not."],
         ["What do the conditions mean?", "New: never used. Open box: box opened, unused or barely used. Like new: used but looks and works like new. Good: normal signs of use. Fair: visible wear, described in the listing. For parts: sold as-is for parts or repair."],
         ["Are items sold as-is?", "Yes. Everything is described as honestly as possible and you inspect it before you pay."],
+        ["Can I return an item?", "No. All sales are final, with no returns, exchanges or refunds after pickup or delivery. Check the item over before you pay."],
       ],
     },
     {

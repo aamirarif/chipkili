@@ -9,14 +9,14 @@ export default async function TermsPage() {
   return (
     <LegalPage
       title="Terms"
-      updated="September 30, 2026"
+      updated="October 26, 2026"
       sections={[
         ["About the site", <p key="a">{s.operatorLine} chipkili.com shows items for sale and lets you message the seller. There is no online checkout.</p>],
         [
           "Listings",
           <p key="b">
             Items are sold as-is. Descriptions, photos and prices are given in good faith and can change or be withdrawn at any time. An item is not reserved until the
-            seller confirms by text. Please inspect every item at pickup before paying.
+            seller confirms by text. Please inspect every item at pickup before paying. All sales are final: there are no returns, exchanges or refunds after pickup or delivery.
           </p>,
         ],
         ["Pickup and delivery", <p key="c">{s.deliveryNote} Delivery fees depend on distance and are confirmed by text before delivery.</p>],
